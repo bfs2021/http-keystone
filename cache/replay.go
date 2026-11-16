@@ -7,28 +7,32 @@ import (
 	"github.com/labstack/echo/v5"
 )
 
-// replay implementation
-func replay(c *echo.Context, entry *store.Entry) error {
-	// 1.cast map to http.Header for .Get() capability
-	headers := http.Header(entry.Header)
+// replay writes a cached entry to the response.
+//
+// Stored headers are sanitized again on the way out: hop-by-hop headers and
+// cookies never reach a different client, and Vary always advertises every
+// header the key was built from.
+func replay(c *echo.Context, entry *store.Entry, config Config) error {
+	// Cast map to http.Header for the .Get() helpers.
+	headers := sanitizeHeader(http.Header(entry.Header))
+	ensureVary(headers, config.VaryHeaders)
 
 	clientETag := c.Request().Header.Get("If-None-Match")
-	serverETag := headers.Get("Etag")
+	serverETag := headers.Get("ETag")
 
 	if serverETag != "" && clientETag == serverETag {
 		return c.NoContent(http.StatusNotModified)
 	}
 
-	// Transfer headers to the actual response
-	for k, v := range entry.Header {
-		for _, val := range v {
-			c.Response().Header().Add(k, val)
+	// Transfer headers to the actual response.
+	for name, values := range headers {
+		for _, value := range values {
+			c.Response().Header().Add(name, value)
 		}
 	}
-
 	c.Response().Header().Set("X-Cache", "HIT")
 
-	// Ensure Content-Type is provided or use the cached one
+	// Ensure Content-Type is provided or use the cached one.
 	contentType := headers.Get("Content-Type")
 	if contentType == "" {
 		contentType = "application/octet-stream"
