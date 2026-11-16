@@ -5,7 +5,7 @@ go 1.25.6
 require (
 	dagger.io/dagger v0.20.3
 	github.com/alicebob/miniredis/v2 v2.37.0
-	github.com/labstack/echo/v5 v5.0.4
+	github.com/labstack/echo/v5 v5.1.0
 	github.com/redis/go-redis/v9 v9.18.0
 	github.com/stretchr/testify v1.11.1
 )
