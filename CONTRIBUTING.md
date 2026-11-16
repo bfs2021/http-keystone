@@ -17,13 +17,18 @@ First off, thank you for considering contributing to `http-keystone`! It is thro
    - Shared logic (like new store types) goes in `store/`.
 4. **Testing:** All new features must include unit tests.
    ```bash
-   # use local testing
-   gomarkdown -o {{.Dir}}/DOCS.md ./...
-   go test -v ./...
+   # run the test suite and checks locally (same as CI)
+   make ci
 
-   # or use dagger testing
-   go run ./dagger/docs/main.go
-   go run ./dagger/ci/main.go
+   # regenerate the package documentation
+   make docs
+   ```
+
+   To run the exact GitHub Actions workflows locally, install
+   [nektos/act](https://github.com/nektos/act) and use:
+   ```bash
+   make act-ci    # act -j go-testing
+   make act-docs  # act -j docs
    ```
 
 

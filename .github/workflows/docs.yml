@@ -1,4 +1,5 @@
-name: Dagger Docs Checker
+name: Docs Checker
+
 on: [push, pull_request]
 
 permissions:
@@ -8,20 +9,25 @@ jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version-file: go.mod
+          cache: true
 
-      - name: Run Dagger Docs Generator
-        run: go run ./dagger/docs/main.go
-        
-      - name: Verify Documentation is Up-to-Date
+      - name: Install gomarkdoc
+        run: go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+
+      - name: Generate documentation
+        run: gomarkdoc -o "{{.Dir}}/DOCS.md" ./...
+
+      - name: Verify documentation is up to date
         run: |
           if ! git diff -w --exit-code; then
             echo "::error::Documentation is out of date!"
-            echo "Please run 'go run ./dagger/docs/main.go' locally and commit the changes."
+            echo "Please run 'gomarkdoc -o \"{{.Dir}}/DOCS.md\" ./...' locally and commit the changes."
             exit 1
           fi

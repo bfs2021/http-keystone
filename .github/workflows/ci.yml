@@ -1,5 +1,9 @@
-name: CI Dagger Pipeline
+name: CI
+
 on: [push, pull_request]
+
+permissions:
+  contents: read
 
 jobs:
   go-testing:
@@ -11,14 +15,32 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.25'
+          go-version-file: go.mod
+          cache: true
 
-      - name: Run Dagger Pipeline
-        run: go run ./dagger/ci/main.go
-      
-      - name: Verify Go Modules are Tidy
+      - name: Check formatting
         run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::These files are not gofmt'd:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Verify Go modules are tidy
+        run: |
+          go mod tidy
           if ! git diff -w --exit-code go.mod go.sum; then
             echo "::error::Go modules are not tidy! Please run 'go mod tidy' locally."
             exit 1
           fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build example module
+        working-directory: _examples/cache/otp_code_verification
+        run: go build ./...

@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/its-ernest/http-keystone.svg)](https://pkg.go.dev/github.com/its-ernest/http-keystone)
 [![Go Report Card](https://goreportcard.com/badge/github.com/its-ernest/http-keystone)](https://goreportcard.com/report/github.com/its-ernest/http-keystone)
-[![Dagger Docs](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml/badge.svg)](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml)
+[![Docs](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml/badge.svg)](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml)
 [![Build Status](https://github.com/its-ernest/http-keystone/actions/workflows/ci.yml/badge.svg)](https://github.com/its-ernest/http-keystone/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
