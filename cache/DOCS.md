@@ -14,7 +14,7 @@ import "github.com/its-ernest/http-keystone/cache"
 
 
 <a name="DefaultKeyGenerator"></a>
-## func [DefaultKeyGenerator](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L60>)
+## func [DefaultKeyGenerator](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L67>)
 
 ```go
 func DefaultKeyGenerator(c *echo.Context) string
@@ -34,7 +34,7 @@ New returns an Echo middleware for caching HTTP responses.
 By default only anonymous, cacheable GET requests are stored, only 200 responses are kept, and requests carrying Authorization or Cookie headers bypass the cache. See Config for the knobs that relax these defaults.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L12-L56>)
+## type [Config](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L12-L63>)
 
 Config structure for http\-keystone/cache middleware
 
@@ -53,10 +53,17 @@ type Config struct {
     // Responses larger than this are streamed to the client and not cached.
     MaxBodySize int
 
-    // RetryDelay and MaxRetries control how long a request waits for another
-    // request to populate the cache. Reserved for stampede handling.
+    // RetryDelay and MaxRetries control what a request does while another
+    // request is populating the same cold key. The waiter polls the store up to
+    // MaxRetries times, starting at RetryDelay and growing linearly with jitter.
+    // Defaults are 20ms and 10 retries (roughly a one-second budget).
     RetryDelay time.Duration
     MaxRetries int
+
+    // LockTTL bounds how long the population lock is held before another
+    // request may take it over. Default is 10s. Set it longer than your
+    // slowest cacheable handler to avoid concurrent population.
+    LockTTL time.Duration
 
     // CacheAuthenticated allows responses to requests carrying Authorization
     // or Cookie headers to be cached. Default is false.
