@@ -8,6 +8,8 @@ A **high-performance, production-ready caching middleware** for [Echo](https://e
 * **Concurrent-safe:** Uses `sync.Map` for high-concurrency environments.
 * **Cache stampede prevention:** Only one request computes the cache per key; others wait or retry.
 * **ETag & Not-Modified:** Supports client-side caching validation.
+* **Privacy-safe defaults:** Authenticated requests, cookies, and non-public responses are never stored unless you opt in.
+* **Vary-aware keys:** Responses that vary on `Accept-Encoding` (or headers you configure) get separate cache entries.
 * **Configurable:** TTL, max body size, retry behavior, skip functions, key generators.
 * **Automatic cleanup:** Periodic eviction of expired entries prevents memory bloat.
 * **Production-ready logging:** Tracks hits, misses, and cache events.
@@ -86,26 +88,74 @@ func main() {
 
 ## Configuration Options
 
-| Field          | Type                        | Default               | Description                                        |
-| -------------- | --------------------------- | --------------------- | -------------------------------------------------- |
-| `Store`        | `store.Store`               | **Required**          | Backend cache store (`MemoryStore` or custom).     |
-| `TTL`          | `time.Duration`             | `5 * time.Minute`     | Time-to-live for cached entries.                   |
-| `Skipper`      | `func(echo.Context) bool`   | `nil`                 | Function to skip caching for specific requests.    |
-| `KeyGenerator` | `func(echo.Context) string` | `DefaultKeyGenerator` | Function to generate cache keys.                   |
-| `MaxBodySize`  | `int`                       | 1MB                   | Maximum response size to cache.                    |
-| `RetryDelay`   | `time.Duration`             | 20ms                  | Delay between retries if cache is being generated. |
-| `MaxRetries`   | `int`                       | 5                     | Max retry attempts for waiting requests.           |
+| Field                  | Type                          | Default                | Description                                        |
+| ---------------------- | ----------------------------- | ---------------------- | -------------------------------------------------- |
+| `Store`                | `store.Store`                 | **Required**           | Backend cache store (`MemoryStore`, Redis, custom). |
+| `TTL`                  | `time.Duration`               | `5 * time.Minute`      | Time-to-live for cached entries.                   |
+| `Skipper`              | `func(*echo.Context) bool`    | `nil`                  | Function to skip caching for specific requests.    |
+| `KeyGenerator`         | `func(*echo.Context) string`  | `DefaultKeyGenerator`  | Base cache key. `VaryHeaders` and credentials are appended automatically. |
+| `MaxBodySize`          | `int`                         | 1MB                    | Maximum bytes buffered and cached; larger responses stream through uncached. |
+| `RetryDelay`           | `time.Duration`               | 20ms                   | Delay between retries if cache is being generated. |
+| `MaxRetries`           | `int`                         | 5                      | Max retry attempts for waiting requests.           |
+| `CacheAuthenticated`   | `bool`                        | `false`                | Store responses for requests with `Authorization`/`Cookie`, keyed per credential. |
+| `CacheableStatusCodes` | `[]int`                       | `[200]`                | Response statuses that may be stored.              |
+| `VaryHeaders`          | `[]string`                    | `["Accept-Encoding"]`  | Request headers hashed into the key and advertised in `Vary`. |
+| `ShouldCache`          | `func(*echo.Context, *store.Entry) bool` | `nil`        | Extra veto after the built-in safety checks.       |
+
+---
+
+## Cache safety and privacy
+
+The defaults are deliberately conservative, because caching a response for the
+wrong client is a data leak:
+
+* **Authenticated requests bypass the cache.** A request with `Authorization`,
+  `Proxy-Authorization`, or `Cookie` is never served from cache and never
+  stored. Set `CacheAuthenticated: true` to opt in; credentials are then hashed
+  into the cache key, so different users never share an entry.
+* **Only 200 by default.** Widen `CacheableStatusCodes` if you want to cache
+  redirects or 404s.
+* **Responses that must stay per-client are never stored:** any `Set-Cookie`, or
+  `Cache-Control: private`, `no-store`, or `no-cache` marks the response as
+  `X-Cache: BYPASS`.
+* **`Vary` is honored.** A response whose `Vary` names a header that is not in
+  `VaryHeaders` is not cached, and `Vary: *` disables caching. Add headers such
+  as `Accept-Language` to `VaryHeaders` when handlers vary on them.
+* **Request directives are honored.** `Cache-Control: no-store`/`no-cache` and
+  `Pragma: no-cache` bypass the cache.
+* **Hop-by-hop headers and `Set-Cookie` are stripped** from stored entries and
+  never replayed to another client. `Date`/`Age` are regenerated.
+* **`ShouldCache`** receives the response entry after the built-in policy and
+  can veto storage for application-specific reasons.
+
+If a route depends on a logged-in user, prefer a stable user or tenant ID in
+`KeyGenerator` and leave `CacheAuthenticated` off, rather than hashing raw
+session cookies into the key space.
+
+---
+
+## Response size and streaming
+
+The middleware buffers a response only up to `MaxBodySize`. If a handler writes
+more than that, or calls `Flush` (SSE, long polling, websockets), the buffered
+bytes are sent, the rest of the response is streamed directly to the client, and
+nothing is stored. Streamed responses carry `X-Cache: BYPASS`.
+
+This keeps memory bounded by `MaxBodySize` per in-flight cacheable request
+instead of by the size of whatever the handler produces.
 
 ---
 
 ## Middleware Behavior
 
-1. **Cache Check:** Middleware first checks the cache.
-2. **Cache Hit:** Returns cached response with `X-Cache: HIT`. ETag validated; returns 304 if client has latest version.
-3. **Cache Miss:** Acquires lock for this key (TTL enforced). Only one request builds the cache.
-4. **Other Concurrent Requests:** Retry loop waits for cache to be ready; fallback to origin handler if lock persists.
-5. **Cache Save:** Stores response with TTL and generates ETag, sets `X-Cache: MISS`.
-6. **Eviction:** Expired items removed automatically by the background evictor.
+1. **Request policy:** Non-`GET` requests, `Skipper` matches, credential-bearing requests (unless `CacheAuthenticated`), and `no-store`/`no-cache` requests go straight to the handler.
+2. **Cache Check:** The key is the base key plus a digest of the configured `Vary` headers (and credentials, when enabled).
+3. **Cache Hit:** Returns cached response with `X-Cache: HIT`. ETag validated; returns 304 if client has latest version.
+4. **Cache Miss:** Acquires lock for this key (TTL enforced). Only one request builds the cache.
+5. **Other Concurrent Requests:** Retry loop waits for cache to be ready; fallback to origin handler if lock persists.
+6. **Response policy:** Status, `Set-Cookie`, `Cache-Control`, `Vary`, and `ShouldCache` are checked before storing.
+7. **Cache Save:** Stores a sanitized entry with TTL and an ETag, then serves the same headers with `X-Cache: MISS`.
+8. **Eviction:** Expired items removed automatically by the background evictor.
 
 ---
 
@@ -120,8 +170,9 @@ func main() {
 
 ## HTTP Headers
 
-* `X-Cache`: `HIT` or `MISS`
+* `X-Cache`: `HIT`, `MISS`, or `BYPASS` (not stored)
 * `Etag`: SHA256 hash of response body
+* `Vary`: advertises every configured `VaryHeaders` entry
 * `Content-Type`: Respected from handler or auto-detected
 
 ---

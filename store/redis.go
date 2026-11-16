@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -48,14 +49,20 @@ func NewRedisStore(addr string) *RedisStore {
 // NewRedisStoreWithOptions creates a new RedisStore with custom configuration.
 func NewRedisStoreWithOptions(opts RedisStoreOptions) *RedisStore {
 	return &RedisStore{
-		client: redis.NewClient(&redis.Options{
-			Addr:         opts.Addr,
-			PoolSize:     opts.PoolSize,
-			MinIdleConns: opts.MinIdleConns,
-			Password:     opts.Password,
-			DB:           opts.DB,
-		}),
+		client: newRedisClient(opts),
 	}
+}
+
+// newRedisClient builds a go-redis client from the shared options type.
+// A zero PoolSize/MinIdleConns/PoolTimeout lets go-redis apply its defaults.
+func newRedisClient(opts RedisStoreOptions) *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:         opts.Addr,
+		PoolSize:     opts.PoolSize,
+		MinIdleConns: opts.MinIdleConns,
+		Password:     opts.Password,
+		DB:           opts.DB,
+	})
 }
 
 // Get retrieves a cached Entry by its key from Redis.
@@ -107,4 +114,13 @@ func (r *RedisStore) Unlock(ctx context.Context, key string) error {
 // It is important to call this when shutting down the application.
 func (r *RedisStore) Close() error {
 	return r.client.Close()
+}
+
+// Ping verifies that the Redis server is reachable. It is useful for
+// readiness checks and for failing fast when the configured address is wrong.
+func (r *RedisStore) Ping(ctx context.Context) error {
+	if err := r.client.Ping(ctx).Err(); err != nil {
+		return fmt.Errorf("store: redis ping: %w", err)
+	}
+	return nil
 }

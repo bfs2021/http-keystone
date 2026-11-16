@@ -6,7 +6,7 @@
 import "github.com/its-ernest/http-keystone/store"
 ```
 
-Package store provides the underlying persistence and locking mechanisms for the http-keystone middleware suite.
+Package store provides the underlying persistence and locking mechanisms for the http\-keystone middleware suite.
 
 ## Index
 
@@ -22,6 +22,15 @@ Package store provides the underlying persistence and locking mechanisms for the
   - [func \(m \*MemoryStore\) Save\(\_ context.Context, key string, entry \*Entry, ttl time.Duration\) error](<#MemoryStore.Save>)
   - [func \(m \*MemoryStore\) StartEvictor\(interval time.Duration, stop \<\-chan struct\{\}\)](<#MemoryStore.StartEvictor>)
   - [func \(m \*MemoryStore\) Unlock\(\_ context.Context, key string\) error](<#MemoryStore.Unlock>)
+- [type RedisCounter](<#RedisCounter>)
+  - [func NewRedisCounter\(addr string\) \*RedisCounter](<#NewRedisCounter>)
+  - [func NewRedisCounterWithClient\(client \*redis.Client\) \*RedisCounter](<#NewRedisCounterWithClient>)
+  - [func NewRedisCounterWithOptions\(opts RedisStoreOptions\) \*RedisCounter](<#NewRedisCounterWithOptions>)
+  - [func \(c \*RedisCounter\) Close\(\) error](<#RedisCounter.Close>)
+  - [func \(c \*RedisCounter\) Get\(ctx context.Context, key string\) \(int, error\)](<#RedisCounter.Get>)
+  - [func \(c \*RedisCounter\) Increment\(ctx context.Context, key string, n int, ttl time.Duration\) \(int, error\)](<#RedisCounter.Increment>)
+  - [func \(c \*RedisCounter\) Ping\(ctx context.Context\) error](<#RedisCounter.Ping>)
+  - [func \(c \*RedisCounter\) Reset\(ctx context.Context, key string\) error](<#RedisCounter.Reset>)
 - [type RedisStore](<#RedisStore>)
   - [func NewRedisStore\(addr string\) \*RedisStore](<#NewRedisStore>)
   - [func NewRedisStoreWithOptions\(opts RedisStoreOptions\) \*RedisStore](<#NewRedisStoreWithOptions>)
@@ -29,6 +38,7 @@ Package store provides the underlying persistence and locking mechanisms for the
   - [func \(r \*RedisStore\) Delete\(ctx context.Context, key string\) error](<#RedisStore.Delete>)
   - [func \(r \*RedisStore\) Get\(ctx context.Context, key string\) \(\*Entry, error\)](<#RedisStore.Get>)
   - [func \(r \*RedisStore\) Lock\(ctx context.Context, key string, ttl time.Duration\) \(bool, error\)](<#RedisStore.Lock>)
+  - [func \(r \*RedisStore\) Ping\(ctx context.Context\) error](<#RedisStore.Ping>)
   - [func \(r \*RedisStore\) Save\(ctx context.Context, key string, entry \*Entry, ttl time.Duration\) error](<#RedisStore.Save>)
   - [func \(r \*RedisStore\) Unlock\(ctx context.Context, key string\) error](<#RedisStore.Unlock>)
 - [type RedisStoreOptions](<#RedisStoreOptions>)
@@ -53,8 +63,14 @@ var (
 )
 ```
 
+<a name="ErrCounterOverflow"></a>ErrCounterOverflow is returned when a counter value cannot be represented as an int on the current platform.
+
+```go
+var ErrCounterOverflow = errors.New("store: counter value overflows int")
+```
+
 <a name="Counter"></a>
-## type Counter
+## type [Counter](<https://github.com/its-ernest/http-keystone/blob/main/store/store.go#L47-L57>)
 
 Counter defines a simpler interface for numeric tracking \(Abuse, Rate Limiting\)
 
@@ -73,16 +89,16 @@ type Counter interface {
 ```
 
 <a name="NewMemoryCounter"></a>
-### func NewMemoryCounter
+### func [NewMemoryCounter](<https://github.com/its-ernest/http-keystone/blob/main/store/mem_counter.go#L16>)
 
 ```go
 func NewMemoryCounter() Counter
 ```
 
-
+NewMemoryCounter returns a new thread\-safe memory\-based Counter.
 
 <a name="Entry"></a>
-## type Entry
+## type [Entry](<https://github.com/its-ernest/http-keystone/blob/main/store/store.go#L22-L26>)
 
 Entry represents the data that actually persists
 
@@ -95,7 +111,7 @@ type Entry struct {
 ```
 
 <a name="MemoryStore"></a>
-## type MemoryStore
+## type [MemoryStore](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L20-L23>)
 
 MemoryStore is an in\-memory implementation of the Store interface. It utilizes sync.Map for thread\-safe data operations and distributed\-style locking simulations, making it ideal for single\-instance applications.
 
@@ -106,7 +122,7 @@ type MemoryStore struct {
 ```
 
 <a name="NewMemoryStore"></a>
-### func NewMemoryStore
+### func [NewMemoryStore](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L32>)
 
 ```go
 func NewMemoryStore() *MemoryStore
@@ -115,7 +131,7 @@ func NewMemoryStore() *MemoryStore
 NewMemoryStore initializes and returns a new pointer to a MemoryStore.
 
 <a name="MemoryStore.Delete"></a>
-### func \(\*MemoryStore\) Delete
+### func \(\*MemoryStore\) [Delete](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L62>)
 
 ```go
 func (m *MemoryStore) Delete(_ context.Context, key string) error
@@ -124,7 +140,7 @@ func (m *MemoryStore) Delete(_ context.Context, key string) error
 Delete removes a specific entry from the memory store immediately.
 
 <a name="MemoryStore.Get"></a>
-### func \(\*MemoryStore\) Get
+### func \(\*MemoryStore\) [Get](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L38>)
 
 ```go
 func (m *MemoryStore) Get(_ context.Context, key string) (*Entry, error)
@@ -133,7 +149,7 @@ func (m *MemoryStore) Get(_ context.Context, key string) (*Entry, error)
 Get retrieves a cached Entry by its key. If the entry exists but has expired, it is deleted and ErrNotFound is returned.
 
 <a name="MemoryStore.Lock"></a>
-### func \(\*MemoryStore\) Lock
+### func \(\*MemoryStore\) [Lock](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L71>)
 
 ```go
 func (m *MemoryStore) Lock(_ context.Context, key string, ttl time.Duration) (bool, error)
@@ -142,7 +158,7 @@ func (m *MemoryStore) Lock(_ context.Context, key string, ttl time.Duration) (bo
 Lock attempts to acquire a non\-blocking lock for a given key. It returns true if the lock was successfully acquired or if a previous lock has already expired. This is essential for preventing "thundering herd" issues in idempotency middleware.
 
 <a name="MemoryStore.Save"></a>
-### func \(\*MemoryStore\) Save
+### func \(\*MemoryStore\) [Save](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L53>)
 
 ```go
 func (m *MemoryStore) Save(_ context.Context, key string, entry *Entry, ttl time.Duration) error
@@ -151,7 +167,7 @@ func (m *MemoryStore) Save(_ context.Context, key string, entry *Entry, ttl time
 Save persists an Entry into memory with a specific time\-to\-live \(TTL\).
 
 <a name="MemoryStore.StartEvictor"></a>
-### func \(\*MemoryStore\) StartEvictor
+### func \(\*MemoryStore\) [StartEvictor](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L101>)
 
 ```go
 func (m *MemoryStore) StartEvictor(interval time.Duration, stop <-chan struct{})
@@ -160,7 +176,7 @@ func (m *MemoryStore) StartEvictor(interval time.Duration, stop <-chan struct{})
 StartEvictor launches a background goroutine that periodically scans the store and removes expired entries. The goroutine stops when the provided stop channel is closed.
 
 <a name="MemoryStore.Unlock"></a>
-### func \(\*MemoryStore\) Unlock
+### func \(\*MemoryStore\) [Unlock](<https://github.com/its-ernest/http-keystone/blob/main/store/memory.go#L93>)
 
 ```go
 func (m *MemoryStore) Unlock(_ context.Context, key string) error
@@ -168,8 +184,93 @@ func (m *MemoryStore) Unlock(_ context.Context, key string) error
 
 Unlock releases the lock for the given key, allowing other processes to acquire it.
 
+<a name="RedisCounter"></a>
+## type [RedisCounter](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L23-L26>)
+
+RedisCounter implements Counter using Redis. It is suitable for distributed deployments where multiple application instances must share abuse scores, rate limits, or any other numeric counter.
+
+Increment is atomic: the INCRBY and the optional expiry update run in a single Lua script, so concurrent increments cannot lose updates or leave a key without its TTL.
+
+```go
+type RedisCounter struct {
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewRedisCounter"></a>
+### func [NewRedisCounter](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L44>)
+
+```go
+func NewRedisCounter(addr string) *RedisCounter
+```
+
+NewRedisCounter creates a Redis\-backed Counter using addr \(for example "localhost:6379"\). This is the convenience constructor for simple setups.
+
+<a name="NewRedisCounterWithClient"></a>
+### func [NewRedisCounterWithClient](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L66>)
+
+```go
+func NewRedisCounterWithClient(client *redis.Client) *RedisCounter
+```
+
+NewRedisCounterWithClient creates a RedisCounter that reuses an existing go\-redis client. The caller retains ownership of the client: Close is a no\-op for counters created this way, and the caller must close the client when the application shuts down.
+
+<a name="NewRedisCounterWithOptions"></a>
+### func [NewRedisCounterWithOptions](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L55>)
+
+```go
+func NewRedisCounterWithOptions(opts RedisStoreOptions) *RedisCounter
+```
+
+NewRedisCounterWithOptions creates a RedisCounter with custom connection settings. It accepts the same options type as RedisStore so cache and abuse tracking can be pointed at the same Redis instance.
+
+<a name="RedisCounter.Close"></a>
+### func \(\*RedisCounter\) [Close](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L119>)
+
+```go
+func (c *RedisCounter) Close() error
+```
+
+Close closes the underlying client when the counter owns it. It is a no\-op for counters created with NewRedisCounterWithClient.
+
+<a name="RedisCounter.Get"></a>
+### func \(\*RedisCounter\) [Get](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L72>)
+
+```go
+func (c *RedisCounter) Get(ctx context.Context, key string) (int, error)
+```
+
+Get returns the current value for key. A missing or expired key returns 0 with a nil error, matching the in\-memory Counter implementation.
+
+<a name="RedisCounter.Increment"></a>
+### func \(\*RedisCounter\) [Increment](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L86>)
+
+```go
+func (c *RedisCounter) Increment(ctx context.Context, key string, n int, ttl time.Duration) (int, error)
+```
+
+Increment atomically adds n to key and returns the new total. When ttl is positive, it becomes the key's expiry; every increment refreshes it, which gives abuse tracking a sliding cooldown window.
+
+<a name="RedisCounter.Ping"></a>
+### func \(\*RedisCounter\) [Ping](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L110>)
+
+```go
+func (c *RedisCounter) Ping(ctx context.Context) error
+```
+
+Ping verifies that the Redis server is reachable.
+
+<a name="RedisCounter.Reset"></a>
+### func \(\*RedisCounter\) [Reset](<https://github.com/its-ernest/http-keystone/blob/main/store/redis_counter.go#L102>)
+
+```go
+func (c *RedisCounter) Reset(ctx context.Context, key string) error
+```
+
+Reset removes key immediately.
+
 <a name="RedisStore"></a>
-## type RedisStore
+## type [RedisStore](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L15-L17>)
 
 RedisStore implements the Store interface using Redis as the backend. It is suitable for distributed production environments where multiple application instances need to share a consistent cache.
 
@@ -180,7 +281,7 @@ type RedisStore struct {
 ```
 
 <a name="NewRedisStore"></a>
-### func NewRedisStore
+### func [NewRedisStore](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L41>)
 
 ```go
 func NewRedisStore(addr string) *RedisStore
@@ -189,7 +290,7 @@ func NewRedisStore(addr string) *RedisStore
 NewRedisStore creates a new RedisStore with the provided address. This is a convenience constructor for simple setups.
 
 <a name="NewRedisStoreWithOptions"></a>
-### func NewRedisStoreWithOptions
+### func [NewRedisStoreWithOptions](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L50>)
 
 ```go
 func NewRedisStoreWithOptions(opts RedisStoreOptions) *RedisStore
@@ -198,7 +299,7 @@ func NewRedisStoreWithOptions(opts RedisStoreOptions) *RedisStore
 NewRedisStoreWithOptions creates a new RedisStore with custom configuration.
 
 <a name="RedisStore.Close"></a>
-### func \(\*RedisStore\) Close
+### func \(\*RedisStore\) [Close](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L115>)
 
 ```go
 func (r *RedisStore) Close() error
@@ -207,7 +308,7 @@ func (r *RedisStore) Close() error
 Close closes the Redis connection pool. It is important to call this when shutting down the application.
 
 <a name="RedisStore.Delete"></a>
-### func \(\*RedisStore\) Delete
+### func \(\*RedisStore\) [Delete](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L96>)
 
 ```go
 func (r *RedisStore) Delete(ctx context.Context, key string) error
@@ -216,7 +317,7 @@ func (r *RedisStore) Delete(ctx context.Context, key string) error
 Delete removes a specific entry from Redis immediately.
 
 <a name="RedisStore.Get"></a>
-### func \(\*RedisStore\) Get
+### func \(\*RedisStore\) [Get](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L70>)
 
 ```go
 func (r *RedisStore) Get(ctx context.Context, key string) (*Entry, error)
@@ -225,7 +326,7 @@ func (r *RedisStore) Get(ctx context.Context, key string) (*Entry, error)
 Get retrieves a cached Entry by its key from Redis. Returns ErrNotFound if the key does not exist or has expired.
 
 <a name="RedisStore.Lock"></a>
-### func \(\*RedisStore\) Lock
+### func \(\*RedisStore\) [Lock](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L103>)
 
 ```go
 func (r *RedisStore) Lock(ctx context.Context, key string, ttl time.Duration) (bool, error)
@@ -233,8 +334,17 @@ func (r *RedisStore) Lock(ctx context.Context, key string, ttl time.Duration) (b
 
 Lock attempts to acquire a distributed lock for a given key using SET NX. This is atomic and prevents race conditions in distributed environments. Returns true if the lock was successfully acquired.
 
+<a name="RedisStore.Ping"></a>
+### func \(\*RedisStore\) [Ping](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L121>)
+
+```go
+func (r *RedisStore) Ping(ctx context.Context) error
+```
+
+Ping verifies that the Redis server is reachable. It is useful for readiness checks and for failing fast when the configured address is wrong.
+
 <a name="RedisStore.Save"></a>
-### func \(\*RedisStore\) Save
+### func \(\*RedisStore\) [Save](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L87>)
 
 ```go
 func (r *RedisStore) Save(ctx context.Context, key string, entry *Entry, ttl time.Duration) error
@@ -243,7 +353,7 @@ func (r *RedisStore) Save(ctx context.Context, key string, entry *Entry, ttl tim
 Save persists an Entry into Redis with a specific time\-to\-live \(TTL\).
 
 <a name="RedisStore.Unlock"></a>
-### func \(\*RedisStore\) Unlock
+### func \(\*RedisStore\) [Unlock](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L109>)
 
 ```go
 func (r *RedisStore) Unlock(ctx context.Context, key string) error
@@ -252,7 +362,7 @@ func (r *RedisStore) Unlock(ctx context.Context, key string) error
 Unlock releases the lock for the given key.
 
 <a name="RedisStoreOptions"></a>
-## type RedisStoreOptions
+## type [RedisStoreOptions](<https://github.com/its-ernest/http-keystone/blob/main/store/redis.go#L20-L37>)
 
 RedisStoreOptions provides configuration options for RedisStore.
 
@@ -278,7 +388,7 @@ type RedisStoreOptions struct {
 ```
 
 <a name="Store"></a>
-## type Store
+## type [Store](<https://github.com/its-ernest/http-keystone/blob/main/store/store.go#L29-L44>)
 
 Store defines the contract for any backend \(Memory, Redis, etc.\)
 
