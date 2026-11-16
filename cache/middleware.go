@@ -1,8 +1,6 @@
 package cache
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
@@ -131,9 +129,7 @@ func New(config Config) echo.MiddlewareFunc {
 			if responseCacheable(c, candidate, config) {
 				stored := sanitizeHeader(candidate.Header)
 				ensureVary(stored, config.VaryHeaders)
-
-				hash := sha256.Sum256(candidate.Body)
-				stored.Set("ETag", hex.EncodeToString(hash[:]))
+				stored.Set("ETag", etagFor(candidate.Body, config.WeakETag))
 
 				candidate.Header = stored
 				if err := config.Store.Save(ctx, key, candidate, config.TTL); err == nil {
