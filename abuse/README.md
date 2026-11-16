@@ -69,6 +69,38 @@ func main() {
 
 ---
 
+## Distributed tracking with Redis
+
+`store.RedisCounter` implements `store.Counter` and stores scores in Redis, so
+every application instance sees the same heat for a client. `Increment` runs
+`INCRBY` and `PEXPIRE` in one Lua script, making each update atomic: no lost
+increments and no counter left without a cooldown TTL.
+
+```go
+redisCounter := store.NewRedisCounter("localhost:6379")
+defer redisCounter.Close()
+
+e.Use(abuse.New(abuse.Config{
+	Store:     redisCounter,
+	Threshold: 100,
+	Cooldown:  time.Hour,
+	Rules: []abuse.Rule{
+		{Path: "/.env", Score: 100},
+	},
+}))
+```
+
+Use `store.NewRedisCounterWithOptions(store.RedisStoreOptions{...})` to set a
+password, database, or pool sizes, or `store.NewRedisCounterWithClient(client)`
+to share one `*redis.Client` with `store.NewRedisStore`. A counter created with
+a borrowed client does not close it.
+
+Keys are written exactly as the middleware builds them (for example
+`abuse:heat:<client-ip>`), so services sharing one Redis instance must use
+compatible rules and thresholds.
+
+---
+
 ## Configuration Options
 
 | Field | Type | Default | Description |
@@ -95,4 +127,5 @@ If a user has **80 points** of heat, every request they make will be artificiall
 
 * **Order Matters:** Place this middleware **above** your Logger and **above** your Cache. There is no point in logging or caching a request from a known malicious actor.
 * **Real IP:** Ensure your `echo.IPExtractor` is configured correctly if you are running behind Nginx, Cloudflare, or AWS ALB.
+* **Multi-instance deployments:** Use `store.NewRedisCounter` (or share a `*redis.Client` with `NewRedisCounterWithClient`) so heat scores are consistent across replicas. `MemoryCounter` is per-process.
 * **Gradual Penalties:** Use small scores (2-5) for general API endpoints to catch high scrapers, and large scores (50-100) for sensitive system files.
