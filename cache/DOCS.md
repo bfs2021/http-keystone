@@ -14,7 +14,7 @@ import "github.com/its-ernest/http-keystone/cache"
 
 
 <a name="DefaultKeyGenerator"></a>
-## func [DefaultKeyGenerator](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L67>)
+## func [DefaultKeyGenerator](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L72>)
 
 ```go
 func DefaultKeyGenerator(c *echo.Context) string
@@ -23,7 +23,7 @@ func DefaultKeyGenerator(c *echo.Context) string
 DefaultKeyGenerator generates a cache key based on method \+ URL. VaryHeaders are appended by the middleware, so this key is only the base.
 
 <a name="New"></a>
-## func [New](<https://github.com/its-ernest/http-keystone/blob/main/cache/middleware.go#L19>)
+## func [New](<https://github.com/its-ernest/http-keystone/blob/main/cache/middleware.go#L17>)
 
 ```go
 func New(config Config) echo.MiddlewareFunc
@@ -34,7 +34,7 @@ New returns an Echo middleware for caching HTTP responses.
 By default only anonymous, cacheable GET requests are stored, only 200 responses are kept, and requests carrying Authorization or Cookie headers bypass the cache. See Config for the knobs that relax these defaults.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L12-L63>)
+## type [Config](<https://github.com/its-ernest/http-keystone/blob/main/cache/config.go#L12-L68>)
 
 Config structure for http\-keystone/cache middleware
 
@@ -52,6 +52,11 @@ type Config struct {
     // MaxBodySize prevents caching of massive responses (default 1MB).
     // Responses larger than this are streamed to the client and not cached.
     MaxBodySize int
+
+    // WeakETag emits weak validators (W/"...") instead of strong ones. Use it
+    // for bodies whose bytes can change without a semantic change. Default is
+    // false (strong ETags).
+    WeakETag bool
 
     // RetryDelay and MaxRetries control what a request does while another
     // request is populating the same cold key. The waiter polls the store up to
