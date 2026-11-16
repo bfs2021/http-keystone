@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
-// Config structure for echox/cache middleware
+// Config structure for http-keystone/cache middleware
 type Config struct {
 	Store        store.Store
 	TTL          time.Duration

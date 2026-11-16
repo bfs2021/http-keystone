@@ -11,7 +11,7 @@ import (
 	"otp-backend/internal/auth"
 	"otp-backend/internal/service"
 
-	"github.com/its-ernest/echox/internal/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 	"github.com/labstack/echo/v5/middleware"
 )
@@ -53,10 +53,10 @@ func main() {
 		},
 	}))
 
-	// initialize the MemoryStore from my echox
+	// initialize the MemoryStore from my http-keystone
 	memStore := store.NewMemoryStore()
 
-	// use in-memory store as cache temp for echox
+	// use in-memory store as cache temp for http-keystone
 	authService := service.NewAuthService(memStore)
 	authHandler := auth.NewHandler(authService, jwtSecret)
 

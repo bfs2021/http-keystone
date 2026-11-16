@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/its-ernest/echox/steady"
+	"github.com/its-ernest/http-keystone/steady"
 	"github.com/labstack/echo/v5"
 )
 

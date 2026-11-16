@@ -1,7 +1,7 @@
 package abuse_test
 
 import (
-	"github.com/its-ernest/echox/abuse"
+	"github.com/its-ernest/http-keystone/abuse"
 	"github.com/labstack/echo/v5"
 )
 

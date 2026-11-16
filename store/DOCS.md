@@ -3,10 +3,10 @@
 # store
 
 ```go
-import "github.com/its-ernest/echox/store"
+import "github.com/its-ernest/http-keystone/store"
 ```
 
-Package store provides the underlying persistence and locking mechanisms for the echox middleware suite.
+Package store provides the underlying persistence and locking mechanisms for the http-keystone middleware suite.
 
 ## Index
 

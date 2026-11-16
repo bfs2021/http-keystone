@@ -9,7 +9,7 @@ import (
 	"otp-backend/internal/utils"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
@@ -67,7 +67,7 @@ func (h *Handler) verifyOTP(c *echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid JSON")
 	}
 
-	// verify OTP stored in echox cache
+	// verify OTP stored in http-keystone cache
 	phone := utils.FormatPhone(req.Phone)
 	if err := h.service.VerifyOTP(c.Request().Context(), phone, req.Code); err != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized, err.Error())

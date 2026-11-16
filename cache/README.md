@@ -1,4 +1,4 @@
-# echox Cache Middleware
+# http-keystone Cache Middleware
 
 A **high-performance, production-ready caching middleware** for [Echo](https://echo.labstack.com/) in Go.
 [→ View Full API Documentation](DOCS.md)
@@ -18,10 +18,10 @@ A **high-performance, production-ready caching middleware** for [Echo](https://e
 
 ```bash
 # since this is a new push
-GOPROXY=direct go get github.com/its-ernest/echox/cache@latest
+GOPROXY=direct go get github.com/its-ernest/http-keystone/cache@latest
 
 # in the long run
-go get github.com/its-ernest/echox/cache
+go get github.com/its-ernest/http-keystone/cache
 ```
 
 ---
@@ -37,8 +37,8 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v5"
-	"github.com/its-ernest/echox/cache" 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/cache" 
+	"github.com/its-ernest/http-keystone/store"
 )
 
 func main() {

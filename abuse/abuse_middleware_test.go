@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 	"github.com/stretchr/testify/assert"
 )

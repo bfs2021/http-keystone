@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/its-ernest/echox/internal"
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/internal"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
@@ -17,7 +17,7 @@ import (
 func New(config Config) echo.MiddlewareFunc {
 	// Defaults & sanity checks
 	if config.Store == nil {
-		panic("echox: cache middleware requires a store")
+		panic("http-keystone: cache middleware requires a store")
 	}
 	if config.TTL == 0 {
 		config.TTL = 5 * time.Minute

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/its-ernest/echox/cache"
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/cache"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
@@ -32,7 +32,7 @@ func main() {
 	// setup local store
 	memStore := store.NewMemoryStore()
 
-	// apply echox cache middleware
+	// apply http-keystone cache middleware
 	e.Use(cache.New(cache.Config{
 		Store: memStore,
 		TTL:   10 * time.Second,

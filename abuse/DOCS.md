@@ -3,7 +3,7 @@
 # abuse
 
 ```go
-import "github.com/its-ernest/echox/abuse"
+import "github.com/its-ernest/http-keystone/abuse"
 ```
 
 Package abuse provides behavioral analysis middleware for Echo v5. It tracks client reputation via a scoring system to mitigate scrapers and scanners.

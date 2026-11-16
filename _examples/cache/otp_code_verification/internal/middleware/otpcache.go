@@ -3,12 +3,12 @@ package middleware
 import (
 	"time"
 
-	"github.com/its-ernest/echox/cache"
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/cache"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
-// OTPCache uses my echox MemoryStore to prevent OTP spamming
+// OTPCache uses my http-keystone MemoryStore to prevent OTP spamming
 func OTPCache(store store.Store) echo.MiddlewareFunc {
 	return cache.New(cache.Config{
 		Store:       store,

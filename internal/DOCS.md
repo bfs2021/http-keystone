@@ -3,7 +3,7 @@
 # internal
 
 ```go
-import "github.com/its-ernest/echox/internal"
+import "github.com/its-ernest/http-keystone/internal"
 ```
 
 ## Index

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 
@@ -50,7 +50,7 @@ var DefaultConfig = Config{
 func New(config Config) echo.MiddlewareFunc {
 	// 1. Panic if store is missing
 	if config.Store == nil {
-		panic("echox/abuse: Store is required")
+		panic("http-keystone/abuse: Store is required")
 	}
 
 	// 2. Apply defaults
