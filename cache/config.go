@@ -23,6 +23,11 @@ type Config struct {
 	// Responses larger than this are streamed to the client and not cached.
 	MaxBodySize int
 
+	// WeakETag emits weak validators (W/"...") instead of strong ones. Use it
+	// for bodies whose bytes can change without a semantic change. Default is
+	// false (strong ETags).
+	WeakETag bool
+
 	// RetryDelay and MaxRetries control what a request does while another
 	// request is populating the same cold key. The waiter polls the store up to
 	// MaxRetries times, starting at RetryDelay and growing linearly with jitter.
