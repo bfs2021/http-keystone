@@ -3,8 +3,6 @@ package cache
 import (
 	"crypto/sha256"
 	"encoding/hex"
-
-	//"log"
 	"net/http"
 	"time"
 
@@ -55,41 +53,64 @@ func New(config Config) echo.MiddlewareFunc {
 
 			locked, unlockFn := acquireLockWithTTL(ctx, config.Store, lockKey, 10*time.Second)
 			if !locked {
-				// wait/retry logic...
+				// Stampede handling is tracked separately; fall through for now.
 				return next(c)
 			}
 			defer unlockFn()
 
 			originalWriter := c.Response()
-			recorder := internal.NewResponseRecorder(originalWriter)
+			recorder := internal.NewResponseRecorder(originalWriter, config.MaxBodySize)
+			recorder.BeforeWriteHeader = func(h http.Header) {
+				if h.Get("X-Cache") == "" {
+					if recorder.Passthrough() {
+						h.Set("X-Cache", "BYPASS")
+					} else {
+						h.Set("X-Cache", "MISS")
+					}
+				}
+			}
 			c.SetResponse(recorder)
+			defer c.SetResponse(originalWriter)
 
 			if err := next(c); err != nil {
+				// Echo should render the error response; never cache a partial
+				// or failed response.
+				recorder.Discard()
 				return err
 			}
 
-			if recorder.Status == http.StatusOK && recorder.Body.Len() <= config.MaxBodySize {
-				hash := sha256.Sum256(recorder.Body.Bytes())
-				etag := hex.EncodeToString(hash[:]) // CORRECTED METHOD
-
-				newEntry := &store.Entry{
-					Status: recorder.Status,
-					Header: recorder.Header().Clone(),
-					Body:   recorder.Body.Bytes(),
-				}
-
-				// cast map to http.Header to use .Set()
-				entryHeader := http.Header(newEntry.Header)
-				entryHeader.Set("Etag", etag)
-				entryHeader.Set("X-Cache", "MISS")
-
-				_ = config.Store.Save(ctx, key, newEntry, config.TTL)
-
-				c.Response().Header().Set("Etag", etag)
-				c.Response().Header().Set("X-Cache", "MISS")
+			// The response overran MaxBodySize or was flushed by the handler.
+			// It has already been streamed to the client and must not be cached.
+			if recorder.Passthrough() {
+				return nil
 			}
 
-			return nil
+			cached := &store.Entry{
+				Status: recorder.Status(),
+				Header: recorder.Header().Clone(),
+				Body:   recorder.Body(),
+			}
+			http.Header(cached.Header).Del("X-Cache")
+
+			saved := false
+			if cached.Status == http.StatusOK {
+				hash := sha256.Sum256(cached.Body)
+				etag := hex.EncodeToString(hash[:])
+
+				http.Header(cached.Header).Set("ETag", etag)
+				http.Header(cached.Header).Set("X-Cache", "MISS")
+
+				if err := config.Store.Save(ctx, key, cached, config.TTL); err == nil {
+					saved = true
+					recorder.Header().Set("ETag", etag)
+					recorder.Header().Set("X-Cache", "MISS")
+				}
+			}
+			if !saved {
+				recorder.Header().Set("X-Cache", "BYPASS")
+			}
+
+			return recorder.Commit()
 		}
 	}
 }

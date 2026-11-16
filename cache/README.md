@@ -92,9 +92,21 @@ func main() {
 | `TTL`          | `time.Duration`             | `5 * time.Minute`     | Time-to-live for cached entries.                   |
 | `Skipper`      | `func(echo.Context) bool`   | `nil`                 | Function to skip caching for specific requests.    |
 | `KeyGenerator` | `func(echo.Context) string` | `DefaultKeyGenerator` | Function to generate cache keys.                   |
-| `MaxBodySize`  | `int`                       | 1MB                   | Maximum response size to cache.                    |
+| `MaxBodySize`  | `int`                       | 1MB                   | Maximum bytes buffered and cached; larger responses stream through uncached. |
 | `RetryDelay`   | `time.Duration`             | 20ms                  | Delay between retries if cache is being generated. |
 | `MaxRetries`   | `int`                       | 5                     | Max retry attempts for waiting requests.           |
+
+---
+
+## Response size and streaming
+
+The middleware buffers a response only up to `MaxBodySize`. If a handler writes
+more than that, or calls `Flush` (SSE, long polling, websockets), the buffered
+bytes are sent, the rest of the response is streamed directly to the client, and
+nothing is stored. Streamed responses carry `X-Cache: BYPASS`.
+
+This keeps memory bounded by `MaxBodySize` per in-flight cacheable request
+instead of by the size of whatever the handler produces.
 
 ---
 
