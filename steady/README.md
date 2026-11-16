@@ -1,4 +1,4 @@
-# echox Steady Middleware
+# http-keystone Steady Middleware
 
 A **high-performance concurrency limiter** for [Echo](https://echo.labstack.com/) v5. 
 
@@ -20,8 +20,10 @@ A **high-performance concurrency limiter** for [Echo](https://echo.labstack.com/
 ## Installation
 
 ```bash
-go get github.com/its-ernest/echox/steady
+go get github.com/its-ernest/http-keystone@latest
 ```
+
+Then import `github.com/its-ernest/http-keystone/steady`.
 
 ---
 
@@ -34,7 +36,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/its-ernest/echox/steady"
+	"github.com/its-ernest/http-keystone/steady"
 	"github.com/labstack/echo/v5"
 )
 

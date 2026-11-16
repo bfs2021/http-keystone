@@ -1,9 +1,9 @@
-# echox Abuse Middleware
+# http-keystone Abuse Middleware
 
 [![Docs](https://img.shields.io/badge/docs-api_reference-blue?style=flat-square)](./DOCS.md)
 [![Status](https://img.shields.io/badge/status-production--beta-cyan?style=flat-square)](#)
 
-A **smart behavioral firewall** for [Echo v5](https://echo.labstack.com/). `echox/abuse` tracks client reputation using a **Heat** scoring system to identify and neutralize scrapers, scanners, and malicious actors.
+A **smart behavioral firewall** for [Echo v5](https://echo.labstack.com/). `http-keystone/abuse` tracks client reputation using a **Heat** scoring system to identify and neutralize scrapers, scanners, and malicious actors.
 
 [**→ View API eference**](./DOCS.md)
 
@@ -24,12 +24,10 @@ Unlike standard rate-limiters that reset every minute, think of this like a **he
 ## Installation
 
 ```bash
-# since this is a new push
-GOPROXY=direct go get github.com/its-ernest/echox/abuse@latest
-
-# in the long run
-go get github.com/its-ernest/echox/abuse
+go get github.com/its-ernest/http-keystone@latest
 ```
+
+Then import `github.com/its-ernest/http-keystone/abuse`.
 
 ---
 
@@ -41,8 +39,8 @@ package main
 import (
 	"time"
 	"github.com/labstack/echo/v5"
-	"github.com/its-ernest/echox/abuse"
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/abuse"
+	"github.com/its-ernest/http-keystone/store"
 )
 
 func main() {

@@ -1,5 +1,5 @@
 
-From the repository documentation, `echox` currently covers:
+From the repository documentation, `http-keystone` currently covers:
 
 | Package  | Responsibility                        |
 | -------- | ------------------------------------- |
@@ -15,7 +15,7 @@ GitHubHelp
 
 
 
-My initial take: **the next step should be turning echox into a dependable middleware toolkit, not simply adding more middleware.**
+My initial take: **the next step should be turning http-keystone into a dependable middleware toolkit, not simply adding more middleware.**
 
 There are three areas I'd prioritise:
 
@@ -65,7 +65,7 @@ GitHubHelp+1
 
 
 
-## **Where I'd take echox**
+## **Where I'd take http-keystone**
 
 I'd organise its future development around these capabilities:
 

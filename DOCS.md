@@ -3,7 +3,7 @@
 # src
 
 ```go
-import "github.com/its-ernest/echox"
+import "github.com/its-ernest/http-keystone"
 ```
 
 ## Index

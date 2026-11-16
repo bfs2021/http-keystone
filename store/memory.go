@@ -1,5 +1,5 @@
 // Package store provides the underlying persistence and locking mechanisms
-// for the echox middleware suite.
+// for the http-keystone middleware suite.
 package store
 
 import (

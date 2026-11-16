@@ -3,7 +3,7 @@
 # steady
 
 ```go
-import "github.com/its-ernest/echox/steady"
+import "github.com/its-ernest/http-keystone/steady"
 ```
 
 ## Index

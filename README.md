@@ -1,44 +1,53 @@
-# echox
+# http-keystone
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/its-ernest/echox.svg)](https://pkg.go.dev/github.com/its-ernest/echox)
-[![Go Report Card](https://goreportcard.com/badge/github.com/its-ernest/echox)](https://goreportcard.com/report/github.com/its-ernest/echox)
-[![Dagger Docs](https://github.com/its-ernest/echox/actions/workflows/docs.yml/badge.svg)](https://github.com/its-ernest/echox/actions/workflows/docs.yml)
-[![Build Status](https://github.com/its-ernest/echox/actions/workflows/go.yml/badge.svg)](https://github.com/its-ernest/echox/actions/workflows/go.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/its-ernest/http-keystone.svg)](https://pkg.go.dev/github.com/its-ernest/http-keystone)
+[![Go Report Card](https://goreportcard.com/badge/github.com/its-ernest/http-keystone)](https://goreportcard.com/report/github.com/its-ernest/http-keystone)
+[![Dagger Docs](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml/badge.svg)](https://github.com/its-ernest/http-keystone/actions/workflows/docs.yml)
+[![Build Status](https://github.com/its-ernest/http-keystone/actions/workflows/ci.yml/badge.svg)](https://github.com/its-ernest/http-keystone/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **High-performance middleware suite for the Echo v5 ecosystem.**
 
-`echox` is a collection of production-ready middlewares engineered specifically for Echo v5's struct-pointer architecture. By leveraging Go 1.24+ features and standard library interfaces, `echox` provides robust solutions for distributed caching, idempotency, and request lifecycle management.
+`http-keystone` is a collection of production-ready middlewares engineered specifically for Echo v5's struct-pointer architecture. By leveraging Go 1.25+ features and standard library interfaces, `http-keystone` provides robust solutions for distributed caching, idempotency, and request lifecycle management.
 
+> **Renamed from `echox`.** The old `github.com/its-ernest/echox` import path is frozen at `v0.0.5`. New releases are published under `github.com/its-ernest/http-keystone`.
 
 ## Installation
 
-```bash
-# latest versions
-GOPROXY=direct go get github.com/its-ernest/echox@latest
-GOPROXY=direct go get github.com/its-ernest/echox/cache@latest
-GOPROXY=direct go get github.com/its-ernest/echox/abuse@latest
+All middlewares live in the same Go module, so a single `go get` is enough:
 
-# in the long run
-go get github.com/its-ernest/echox/cache
+```bash
+go get github.com/its-ernest/http-keystone@latest
+```
+
+Then import the packages you need:
+
+```go
+import (
+	"github.com/its-ernest/http-keystone/abuse"
+	"github.com/its-ernest/http-keystone/cache"
+	"github.com/its-ernest/http-keystone/steady"
+	"github.com/its-ernest/http-keystone/store"
+)
 ```
 
 ## Framework Compatibility
 
 To ensure stability across the evolving Echo v5 landscape, we maintain specific versions mapped to upstream Echo releases.
 
-| Echo Framework | Recommended echox Version | Git Tag / Branch | Status |
+| Echo Framework | Recommended http-keystone Version | Git Tag / Branch | Status |
 | :--- | :--- | :--- | :--- |
-| **v5.0.0-beta.x** | `v0.0.x` | `v5.0.x`/ `main` | <i class="fas fa-archive"></i> Active |
-| **v5.1.0+** | `v0.1.x` | `v5.1.x` | <i class="fas fa-rocket"></i> Planned |
+| **v5.0.0-beta.x** | `v0.0.x` (old `echox` path) | `v0.0.5` | <i class="fas fa-archive"></i> Legacy |
+| **v5.0.x** | `v0.2.x` | `main` | <i class="fas fa-rocket"></i> Active |
+| **v5.1.0+** | TBD | `v5.1.x` | <i class="fas fa-hourglass-half"></i> Planned |
 
 ## <i class="fas fa-cubes"></i> Middleware Registry
 
 | Module | Purpose | Status | Backend Support |
 | :--- | :--- | :--- | :--- |
-| **[`echox/cache`](cache/README.md)** | RFC-compliant HTTP caching | `Stable` | - `Memory`. <br> - `Redis`. |
-| **[`echox/abuse`](abuse/README.md)** | API abuse detection | `Stable` | - `Memory`. <br> `Redis`. |
-| **[`echox/steady`](steady/README.md)** | Concurrency limit and backpressure | `Beta` | `Channel-based`|
+| **[`http-keystone/cache`](cache/README.md)** | RFC-compliant HTTP caching | `Stable` | - `Memory`. <br> - `Redis`. |
+| **[`http-keystone/abuse`](abuse/README.md)** | API abuse detection | `Stable` | - `Memory`. <br> `Redis`. |
+| **[`http-keystone/steady`](steady/README.md)** | Concurrency limit and backpressure | `Beta` | `Channel-based`|
 
 
 ## Requirements
@@ -86,7 +95,7 @@ To ensure stability across the evolving Echo v5 landscape, we maintain specific 
 	// setup local store
 	memStore := store.NewMemoryStore()
 
-	// apply echox cache middleware
+	// apply http-keystone cache middleware
 	e.Use(cache.New(cache.Config{
 		Store: memStore,
 		TTL:   10 * time.Second,
@@ -120,7 +129,7 @@ For production environments with multiple application instances, use RedisStore:
 	// 	MinIdleConns: 5,
 	// })
 
-	// apply echox cache middleware
+	// apply http-keystone cache middleware
 	e.Use(cache.New(cache.Config{
 		Store:       redisStore,
 		TTL:         5 * time.Minute,
@@ -181,8 +190,8 @@ For production environments with multiple application instances, use RedisStore:
 
 ## Contributors
 
-<a href="https://github.com/its-ernest/echox/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=its-ernest/echox" />
+<a href="https://github.com/its-ernest/http-keystone/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=its-ernest/http-keystone" />
 </a>
 
 Made with [contrib.rocks](https://contrib.rocks).

@@ -3,7 +3,7 @@
 # cache
 
 ```go
-import "github.com/its-ernest/echox/cache"
+import "github.com/its-ernest/http-keystone/cache"
 ```
 
 ## Index

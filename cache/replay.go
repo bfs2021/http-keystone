@@ -3,7 +3,7 @@ package cache
 import (
 	"net/http"
 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"github.com/labstack/echo/v5"
 )
 

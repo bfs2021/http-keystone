@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
-	"log"
 	"time"
 
-	"github.com/its-ernest/echox/store"
+	"github.com/its-ernest/http-keystone/store"
 	"otp-backend/internal/utils"
 )
 
@@ -23,7 +21,7 @@ func (s *AuthService) RequestOTP(ctx context.Context, phone string) error {
 	// generate OTP
 	code := utils.GenerateOTP()
 
-	// entry struct data wrapper fo echox cache
+	// entry struct data wrapper fo http-keystone cache
 	entry := &store.Entry{
 		Body: []byte(code),
 	}
