@@ -12,6 +12,10 @@ import (
 )
 
 // New returns an Echo middleware for caching HTTP responses.
+//
+// By default only anonymous, cacheable GET requests are stored, only 200
+// responses are kept, and requests carrying Authorization or Cookie headers
+// bypass the cache. See Config for the knobs that relax these defaults.
 func New(config Config) echo.MiddlewareFunc {
 	// Defaults & sanity checks
 	if config.Store == nil {
@@ -32,6 +36,12 @@ func New(config Config) echo.MiddlewareFunc {
 	if config.MaxRetries == 0 {
 		config.MaxRetries = 5
 	}
+	if config.CacheableStatusCodes == nil {
+		config.CacheableStatusCodes = []int{http.StatusOK}
+	}
+	if config.VaryHeaders == nil {
+		config.VaryHeaders = []string{"Accept-Encoding"}
+	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c *echo.Context) error {
@@ -41,14 +51,17 @@ func New(config Config) echo.MiddlewareFunc {
 			if c.Request().Method != http.MethodGet {
 				return next(c)
 			}
+			if !requestCacheable(c, config) {
+				return next(c)
+			}
 
-			key := config.KeyGenerator(c)
+			key := cacheKey(c, config)
 			lockKey := key + ":lock"
 			ctx := c.Request().Context()
 
 			entry, err := config.Store.Get(ctx, key)
 			if err == nil && entry != nil {
-				return replay(c, entry)
+				return replay(c, entry, config)
 			}
 
 			locked, unlockFn := acquireLockWithTTL(ctx, config.Store, lockKey, 10*time.Second)
@@ -85,32 +98,48 @@ func New(config Config) echo.MiddlewareFunc {
 				return nil
 			}
 
-			cached := &store.Entry{
+			// The policy runs against the raw handler headers so it can still
+			// see Set-Cookie and Cache-Control before they are sanitized.
+			candidate := &store.Entry{
 				Status: recorder.Status(),
-				Header: recorder.Header().Clone(),
+				Header: http.Header(recorder.Header()).Clone(),
 				Body:   recorder.Body(),
 			}
-			http.Header(cached.Header).Del("X-Cache")
 
 			saved := false
-			if cached.Status == http.StatusOK {
-				hash := sha256.Sum256(cached.Body)
-				etag := hex.EncodeToString(hash[:])
+			if responseCacheable(c, candidate, config) {
+				stored := sanitizeHeader(candidate.Header)
+				ensureVary(stored, config.VaryHeaders)
 
-				http.Header(cached.Header).Set("ETag", etag)
-				http.Header(cached.Header).Set("X-Cache", "MISS")
+				hash := sha256.Sum256(candidate.Body)
+				stored.Set("ETag", hex.EncodeToString(hash[:]))
 
-				if err := config.Store.Save(ctx, key, cached, config.TTL); err == nil {
+				candidate.Header = stored
+				if err := config.Store.Save(ctx, key, candidate, config.TTL); err == nil {
 					saved = true
-					recorder.Header().Set("ETag", etag)
-					recorder.Header().Set("X-Cache", "MISS")
+					// Serve exactly what was stored so a MISS and a later HIT
+					// cannot disagree on headers.
+					replaceHeader(recorder.Header(), stored)
 				}
 			}
-			if !saved {
+
+			if saved {
+				recorder.Header().Set("X-Cache", "MISS")
+			} else {
 				recorder.Header().Set("X-Cache", "BYPASS")
 			}
 
 			return recorder.Commit()
 		}
+	}
+}
+
+// replaceHeader overwrites dst with the contents of src.
+func replaceHeader(dst http.Header, src http.Header) {
+	for name := range dst {
+		delete(dst, name)
+	}
+	for name, values := range src {
+		dst[name] = append([]string(nil), values...)
 	}
 }
