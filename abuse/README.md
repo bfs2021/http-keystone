@@ -24,12 +24,10 @@ Unlike standard rate-limiters that reset every minute, think of this like a **he
 ## Installation
 
 ```bash
-# since this is a new push
-GOPROXY=direct go get github.com/its-ernest/http-keystone/abuse@latest
-
-# in the long run
-go get github.com/its-ernest/http-keystone/abuse
+go get github.com/its-ernest/http-keystone@latest
 ```
+
+Then import `github.com/its-ernest/http-keystone/abuse`.
 
 ---
 

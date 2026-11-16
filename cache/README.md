@@ -17,12 +17,10 @@ A **high-performance, production-ready caching middleware** for [Echo](https://e
 ## Installation
 
 ```bash
-# since this is a new push
-GOPROXY=direct go get github.com/its-ernest/http-keystone/cache@latest
-
-# in the long run
-go get github.com/its-ernest/http-keystone/cache
+go get github.com/its-ernest/http-keystone@latest
 ```
+
+Then import `github.com/its-ernest/http-keystone/cache`.
 
 ---
 

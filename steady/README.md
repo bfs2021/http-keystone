@@ -20,8 +20,10 @@ A **high-performance concurrency limiter** for [Echo](https://echo.labstack.com/
 ## Installation
 
 ```bash
-go get github.com/its-ernest/http-keystone/steady
+go get github.com/its-ernest/http-keystone@latest
 ```
+
+Then import `github.com/its-ernest/http-keystone/steady`.
 
 ---
 
